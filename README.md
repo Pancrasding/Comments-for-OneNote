@@ -1,10 +1,12 @@
-# OneMore Comments
+# Comments for OneNote
 
 Embedded, movable comments for the Windows desktop version of Microsoft OneNote.
 
-OneMore Comments is a community fork of [Steven M. Cohn's OneMore](https://github.com/stevencohn/OneMore). It keeps the full OneMore feature set and adds comments that are attached to selected text, shown inside an embedded right-side pane, and reconnected when the original text moves.
+Comments for OneNote is a community fork of [Steven M. Cohn's OneMore](https://github.com/stevencohn/OneMore). It keeps the full OneMore feature set and adds comments that are attached to selected text, shown inside an embedded right-side pane, and reconnected when the original text moves.
 
 > This is an independent community project. It is not an official Microsoft or OneMore release.
+
+> **Important:** This add-on is not standalone. Install the official **OneMore 7.2.0 x64** first, then install Comments for OneNote.
 
 ## Features
 
@@ -24,7 +26,7 @@ OneMore Comments is a community fork of [Steven M. Cohn's OneMore](https://githu
 ## Install a release
 
 1. Install the official [OneMore 7.2.0](https://github.com/stevencohn/OneMore/releases) if needed.
-2. Download `OneMore-Comments-win-x64.zip` from this repository's Releases page.
+2. Download `Comments-for-OneNote-win-x64-v*.zip` from this repository's Releases page.
 3. Extract the complete ZIP and close OneNote.
 4. Open PowerShell in the extracted folder and run:
 
@@ -75,7 +77,9 @@ Contributions and issue reports are welcome.
 
 ## 中文说明
 
-OneMore Comments 是基于 [OneMore](https://github.com/stevencohn/OneMore) 的社区分支，为 Windows 桌面版 OneNote 增加内嵌评论。评论保存在页面隐藏元数据中，原文移动后会根据原文及上下文重新连接。
+> **安装前提：请先安装官方 OneMore 7.2.0 x64，再安装本项目。**
+
+Comments for OneNote 是基于 [OneMore](https://github.com/stevencohn/OneMore) 的社区分支，为 Windows 桌面版 OneNote 增加内嵌评论。评论保存在页面隐藏元数据中，原文移动后会根据原文及上下文重新连接。
 
 使用方法：在同一段落内选中文字，点击 **OneMore → 添加评论**，或右键选择 **添加评论**。点击 **评论面板** 可显示或隐藏右侧内嵌面板。
 

@@ -54,8 +54,8 @@ Set-Item -LiteralPath "$base\TypeLib" -Value $clsid
 $addin = 'Registry::HKEY_CURRENT_USER\Software\Microsoft\Office\OneNote\AddIns\River.OneMoreAddIn'
 New-Item -Path $addin -Force | Out-Null
 Set-ItemProperty -LiteralPath $addin -Name LoadBehavior -Type DWord -Value 3
-Set-ItemProperty -LiteralPath $addin -Name FriendlyName -Value 'OneMore Comments'
-Set-ItemProperty -LiteralPath $addin -Name Description -Value 'OneMore with embedded movable comments'
+Set-ItemProperty -LiteralPath $addin -Name FriendlyName -Value 'Comments for OneNote (OneMore)'
+Set-ItemProperty -LiteralPath $addin -Name Description -Value 'Embedded movable comments for OneNote, powered by OneMore'
 
-Write-Host "OneMore Comments installed to $target" -ForegroundColor Green
+Write-Host "Comments for OneNote installed to $target" -ForegroundColor Green
 if (-not $NoLaunch) { Start-Process -FilePath 'onenote.exe' }

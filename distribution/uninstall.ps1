@@ -47,5 +47,5 @@ if (Test-Path -LiteralPath $addin) {
   Set-ItemProperty -LiteralPath $addin -Name FriendlyName -Value 'OneMoreAddIn'
   Set-ItemProperty -LiteralPath $addin -Name Description -Value 'Add-in for OneNote'
 }
-Write-Host 'OneMore Comments removed. The official OneMore registration is active again.' -ForegroundColor Green
+Write-Host 'Comments for OneNote removed. The official OneMore registration is active again.' -ForegroundColor Green
 if (-not $NoLaunch) { Start-Process -FilePath 'onenote.exe' }

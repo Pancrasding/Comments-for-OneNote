@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MPL-2.0
-// Copyright 2026 OneMore Comments contributors
+// Copyright 2026 Comments for OneNote contributors
 // Embedded comments for OneNote desktop
 
 namespace River.OneMoreAddIn.Commands

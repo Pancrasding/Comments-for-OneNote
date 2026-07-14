@@ -2,7 +2,7 @@
 
 ## OneMore
 
-OneMore Comments is a modified community distribution of OneMore.
+Comments for OneNote is a modified community distribution of OneMore.
 
 - Upstream project: https://github.com/stevencohn/OneMore
 - Upstream author: Steven M. Cohn and contributors
