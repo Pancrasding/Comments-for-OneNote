@@ -348,6 +348,7 @@ namespace River.OneMoreAddIn
 				logger.WriteLine("shutting down UI");
 
 				HotkeyManager.Unregister();
+				Commands.CommentPaneManager.Close();
 
 				System.Windows.Forms.Application.Exit();
 			}

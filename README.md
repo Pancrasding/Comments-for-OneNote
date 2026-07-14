@@ -1,40 +1,82 @@
-﻿# ![logo](OneMore/Properties/Images/Logo48.png "logo") OneMore - a OneNote Add-in
+# OneMore Comments
 
-OneMore is an add-in for OneNote with simple and powerful features that make OneNote a better OneNote.
+Embedded, movable comments for the Windows desktop version of Microsoft OneNote.
 
-* Download the [latest release](https://github.com/stevencohn/OneMore/releases/latest)
-* Read the [installation instructions](https://onemoreaddin.com/get-started/How%20to%20Install%20OneMore.htm)
-* See the new [OneMore Wiki](https://onemoreaddin.com/) for a full user guide
+OneMore Comments is a community fork of [Steven M. Cohn's OneMore](https://github.com/stevencohn/OneMore). It keeps the full OneMore feature set and adds comments that are attached to selected text, shown inside an embedded right-side pane, and reconnected when the original text moves.
 
-# [![version](https://img.shields.io/github/v/release/stevencohn/OneMore?display_name=tag&color=7E5C81)](https://github.com/stevencohn/OneMore/releases/latest) [![downloads](https://img.shields.io/github/downloads/stevencohn/OneMore/total?color=blue)](https://github.com/stevencohn/OneMore/releases/latest) [![platform](https://img.shields.io/badge/platform-windows%20%7C%20onenote%20desktop-649BC1)](https://onemoreaddin.com/get-started/How%20to%20Install%20OneNote.htm) [![GitHub license](https://img.shields.io/badge/license-mpl--2.0-BF6A48)](https://github.com/stevencohn/OneMore/blob/main/LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://onemoreaddin.com/developers/Setup.htm) ![](https://tokei.rs/b1/github/project-jedi/jcl)
+> This is an independent community project. It is not an official Microsoft or OneMore release.
 
+## Features
 
-# Highlights
-- Quickly access all OneMore commands from the almighty [Command Palette](https://onemoreaddin.com/the-basics/Basics.htm)!
-- Type and search for [inline #hashtags](https://onemoreaddin.com/commands/Search%20and%20Tag%20Commands.htm)
-- Use the [Navigator window](https://onemoreaddin.com/the-basics/Navigator.htm) to keep track of visited pages, a personalized reading list, and navigate the headings of the current page.
-- Integrating with the [ribbon bar](https://onemoreaddin.com/the-basics/Basics.htm), extends <a href="https://onemoreaddin.com/context-menus/Context%20Menu%20Extensions.htm">context menus</a>, and provides customized <a href="https://onemoreaddin.com/the-basics/OneNote%20Keyboard%20Shortcuts.htm">keyboard shortcuts</a>
-- Create [customized font styles](https://onemoreaddin.com/commands/My%20Styles%20Commands.htm) in addition to those provided by OneNote, apply a style to selected text, or apply all styles to the entire page
-- Use predefined [table styles](https://onemoreaddin.com/commands/Table%20Style%20Commands.htm) or create your own to selectively set cell background and fonts
-- Manage a collection of [favorite pages and sections](https://onemoreaddin.com/commands/Favorites%20Commands.htm) with shortcuts to quickly jump to a favorite
-- Add [colorized syntax highlighting](https://onemoreaddin.com/commands/Colorize%20Command.htm) to snippets of source code
-- Add [formulas in table cells](https://onemoreaddin.com/commands/Table%20Commands.htm) using Excel-like expressions
-- [Crop, rotate, or adjust images](https://onemoreaddin.com/commands/Image%20Commands.htm) on a page without opening an external photo editor
-- Save and reuse [custom snippets](https://onemoreaddin.com/commands/Snippets%20Commands.htm) of content anywhere on any page
-- - And many, many more… see below
+- Add a comment from the OneMore ribbon or text context menu.
+- View comments in a pane embedded inside the OneNote window.
+- Store comments in hidden page metadata so they travel and sync with the page.
+- Reconnect a comment after its source text moves to another paragraph.
+- Jump to, edit, resolve, reopen, and delete comments.
+- Avoid unsafe guesses when identical text occurs in ambiguous locations.
 
-## Screenshots
+## Requirements
 
-| Some of the OneMore menus | The OneMore Calendar |
-|---|---|
-| ![screenshot](OneMore/Properties/Images/Screenshot.png) | ![Calendar](OneMore/Properties/Images/Calendar.png) |
-_Click an image to enlarge_
+- Windows desktop OneNote from Microsoft Office.
+- OneMore 7.2.0 installed first.
+- The first community build supports 64-bit OneNote/OneMore.
 
-## 💁 Features - Over 160 commands and growing!
-*Want more from OneMore? OneMore has more...*
+## Install a release
 
-See the 📓 **[OneMore Wiki](https://onemoreaddin.com/)** for a full user guide, setup instructions,
-and description of each command.
+1. Install the official [OneMore 7.2.0](https://github.com/stevencohn/OneMore/releases) if needed.
+2. Download `OneMore-Comments-win-x64.zip` from this repository's Releases page.
+3. Extract the complete ZIP and close OneNote.
+4. Open PowerShell in the extracted folder and run:
 
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+```
 
-© 2020 Steven M Cohn. All rights reserved.
+The installer uses a per-user COM registration override. It does not overwrite the official OneMore installation in `Program Files`.
+
+To remove this community build and return to official OneMore:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
+```
+
+## Use
+
+1. Select text within one paragraph.
+2. Choose **OneMore → Add Comment** or right-click and choose **Add Comment**.
+3. Enter the comment and save it.
+4. Use **OneMore → Comments Pane** to show or hide the embedded pane.
+
+Cross-paragraph selections are not yet supported.
+
+## How anchoring works
+
+Each comment records the quote, its OneNote object ID, and surrounding prefix/suffix context. The pane periodically checks the active page. If the object ID changes after a move, it scores candidate matches using the surrounding context before reconnecting. If matches remain ambiguous, it marks the comment unattached instead of linking to the wrong text.
+
+## Build from source
+
+The project targets .NET Framework 4.8 and follows the upstream OneMore build layout. For 64-bit OneNote:
+
+```powershell
+msbuild OneMore\OneMore.csproj /t:Build /p:Configuration=Debug /p:Platform=x64
+```
+
+Implementation: [`CommentFeature.cs`](OneMore/Commands/Comments/CommentFeature.cs). Tests: [`CommentStoreTests.cs`](OneMoreTests/Commands/Comments/CommentStoreTests.cs).
+
+## Upstream, copyright, and license
+
+This repository is derived from [OneMore](https://github.com/stevencohn/OneMore), copyright © Steven M. Cohn and OneMore contributors. The full upstream Git history is retained. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Source code is distributed under the [Mozilla Public License 2.0](LICENSE). OneMore, OneNote, Microsoft, and related names and marks belong to their respective owners.
+
+Contributions and issue reports are welcome.
+
+---
+
+## 中文说明
+
+OneMore Comments 是基于 [OneMore](https://github.com/stevencohn/OneMore) 的社区分支，为 Windows 桌面版 OneNote 增加内嵌评论。评论保存在页面隐藏元数据中，原文移动后会根据原文及上下文重新连接。
+
+使用方法：在同一段落内选中文字，点击 **OneMore → 添加评论**，或右键选择 **添加评论**。点击 **评论面板** 可显示或隐藏右侧内嵌面板。
+
+首个发布版本支持 64 位 OneNote。卸载脚本会移除社区版本的用户级覆盖并恢复官方 OneMore。

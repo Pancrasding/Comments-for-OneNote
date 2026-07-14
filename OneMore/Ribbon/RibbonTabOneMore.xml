@@ -39,6 +39,20 @@
       onAction="NavigatorCmd"
       size="large"
       keytip="N"/>
+    <button
+      id="ribAddCommentButton"
+      imageMso="ReviewNewComment"
+      label="添加评论"
+      screentip="给选中的文字添加评论"
+      onAction="AddCommentCmd"
+      size="normal"/>
+    <button
+      id="ribCommentsPaneButton"
+      imageMso="ReviewShowComments"
+      label="评论面板"
+      screentip="显示或隐藏嵌入式评论面板"
+      onAction="CommentsPaneCmd"
+      size="normal"/>
     <dynamicMenu
       id="ribFavoritesMenu"
       getLabel="GetRibbonLabel"

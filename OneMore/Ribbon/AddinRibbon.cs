@@ -96,6 +96,12 @@ namespace River.OneMoreAddIn
 
 				var menu = new XElement(ns + "contextMenu",
 					new XAttribute("idMso", "ContextMenuText"));
+				menu.Add(new XElement(ns + "button",
+					new XAttribute("id", "ctxAddEmbeddedComment"),
+					new XAttribute("label", "添加评论"),
+					new XAttribute("imageMso", "ReviewNewComment"),
+					new XAttribute("onAction", "AddCommentCmd"),
+					new XAttribute("insertBeforeMso", "Cut")));
 
 				// backward compat: old format stored styles as a boolean; if present and
 				// ctxStyleGallery is not yet in the ordered items list, add gallery here (old behavior)

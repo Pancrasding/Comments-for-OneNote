@@ -1143,6 +1143,14 @@ namespace River.OneMoreAddIn
 			=> await factory.Run<ViewSectionInBrowserCommand>();
 
 
+		public async Task AddCommentCmd(IRibbonControl control)
+			=> await factory.Run<AddCommentCommand>();
+
+
+		public async Task CommentsPaneCmd(IRibbonControl control)
+			=> await factory.Run<CommentPaneCommand>();
+
+
 		[Command("ribWordCountButton_Label", Keys.None, "ribPageMenu")]
 		public async Task WordCountCmd(IRibbonControl control)
 			=> await factory.Run<WordCountCommand>();
