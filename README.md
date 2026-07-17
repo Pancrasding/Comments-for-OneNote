@@ -1,8 +1,10 @@
 # Comments for OneNote
 
-Embedded, movable comments for the Windows desktop version of Microsoft OneNote.
+Add Word-like comments directly inside the Windows desktop version of OneNote.
 
-Comments for OneNote is a community fork of [Steven M. Cohn's OneMore](https://github.com/stevencohn/OneMore). It keeps the full OneMore feature set and adds comments that are attached to selected text, shown inside an embedded right-side pane, and reconnected when the original text moves.
+Select text, add a comment in an embedded side pane, and keep the comment attached when the original text moves—much like comments in Microsoft Word.
+
+Comments for OneNote is a community fork of [Steven M. Cohn's OneMore](https://github.com/stevencohn/OneMore). It keeps the full OneMore feature set while adding this Word-like commenting workflow.
 
 > This is an independent community project. It is not an official Microsoft or OneMore release.
 
@@ -23,12 +25,16 @@ Comments for OneNote is a community fork of [Steven M. Cohn's OneMore](https://g
 - OneMore 7.2.0 installed first.
 - The first community build supports 64-bit OneNote/OneMore.
 
-## Install a release
+## One-click install
 
 1. Install the official [OneMore 7.2.0](https://github.com/stevencohn/OneMore/releases) if needed.
 2. Download `Comments-for-OneNote-win-x64-v*.zip` from this repository's Releases page.
 3. Extract the complete ZIP and close OneNote.
-4. Open PowerShell in the extracted folder and run:
+4. Double-click **`Install.cmd`**.
+
+OneNote will reopen automatically when installation finishes. Keep all extracted files together while installing.
+
+If Windows prevents the double-click installer from running, open PowerShell in the extracted folder and use:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
@@ -36,7 +42,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 The installer uses a per-user COM registration override. It does not overwrite the official OneMore installation in `Program Files`.
 
-To remove this community build and return to official OneMore:
+To remove this community build and return to official OneMore, double-click **`Uninstall.cmd`**. The equivalent manual command is:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
@@ -77,10 +83,14 @@ Contributions and issue reports are welcome.
 
 ## 中文说明
 
+**让 OneNote 像 Word 一样给选中的文字添加批注。**
+
 > **安装前提：请先安装官方 OneMore 7.2.0 x64，再安装本项目。**
 
-Comments for OneNote 是基于 [OneMore](https://github.com/stevencohn/OneMore) 的社区分支，为 Windows 桌面版 OneNote 增加内嵌评论。评论保存在页面隐藏元数据中，原文移动后会根据原文及上下文重新连接。
+Comments for OneNote 是基于 [OneMore](https://github.com/stevencohn/OneMore) 的社区分支，为 Windows 桌面版 OneNote 增加类似 Microsoft Word 的内嵌批注体验。批注保存在页面隐藏元数据中，原文移动后会根据原文及上下文重新连接。
 
 使用方法：在同一段落内选中文字，点击 **OneMore → 添加评论**，或右键选择 **添加评论**。点击 **评论面板** 可显示或隐藏右侧内嵌面板。
 
-首个发布版本支持 64 位 OneNote。卸载脚本会移除社区版本的用户级覆盖并恢复官方 OneMore。
+安装方法：下载并完整解压 Release 中的 ZIP，关闭 OneNote，然后双击 **`Install.cmd`**。无需手动输入 PowerShell 命令。要卸载并恢复官方 OneMore，双击 **`Uninstall.cmd`**。
+
+当前版本支持 64 位 OneNote。
