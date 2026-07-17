@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: MPL-2.0
 // Copyright 2026 Comments for OneNote contributors
 // Embedded comments for OneNote desktop
 
@@ -14,6 +14,7 @@ namespace River.OneMoreAddIn.Commands
 	using System.Threading;
 	using System.Threading.Tasks;
 	using System.Windows.Forms;
+	using System.Text.RegularExpressions;
 	using System.Xml.Linq;
 
 	internal sealed class CommentRecord
@@ -21,6 +22,10 @@ namespace River.OneMoreAddIn.Commands
 		public string Id { get; set; }
 		public string PageId { get; set; }
 		public string AnchorObjectId { get; set; }
+		public int? AnchorOffset { get; set; }
+		public int? HighlightOffset { get; set; }
+		public int? HighlightLength { get; set; }
+		public bool? HighlightApplied { get; set; }
 		public string Quote { get; set; }
 		public string Prefix { get; set; }
 		public string Suffix { get; set; }
@@ -75,14 +80,49 @@ namespace River.OneMoreAddIn.Commands
 			var ns = paragraph.GetDefaultNamespace();
 			if (ns == XNamespace.None)
 			{
-				ns = paragraph.GetNamespaceOfPrefix(OneNote.Prefix);
+				ns = paragraph.GetNamespaceOfPrefix(OneNote.Prefix) ?? paragraph.Name.Namespace;
 			}
 
-			return string.Concat(paragraph.Descendants(ns + "T").Select(t =>
+			return string.Concat(paragraph.Descendants(ns + "T").Select(RunText));
+		}
+
+		private static string RunText(XElement run)
+		{
+			if (run?.FirstNode is not XCData cdata)
 			{
-				try { return t.GetCData().GetWrapper().Value; }
-				catch { return t.Value; }
-			}));
+				return run?.Value ?? string.Empty;
+			}
+
+			try { return cdata.GetWrapper().Value; }
+			catch { return cdata.Value; }
+		}
+
+		public static int GetSelectionOffset(
+			XElement paragraph, IEnumerable<XElement> selectedRuns)
+		{
+			var first = selectedRuns?.FirstOrDefault();
+			if (paragraph is null || first is null)
+			{
+				return -1;
+			}
+
+			var ns = paragraph.GetDefaultNamespace();
+			if (ns == XNamespace.None)
+			{
+				ns = paragraph.GetNamespaceOfPrefix(OneNote.Prefix) ?? paragraph.Name.Namespace;
+			}
+
+			var offset = 0;
+			foreach (var run in paragraph.Descendants(ns + "T"))
+			{
+				if (ReferenceEquals(run, first))
+				{
+					return offset;
+				}
+				offset += RunText(run).Length;
+			}
+
+			return -1;
 		}
 
 		public static XElement FindParagraph(Page page, string objectId)
@@ -98,25 +138,40 @@ namespace River.OneMoreAddIn.Commands
 
 		public static bool Rebind(Page page, CommentRecord record)
 		{
-			var current = FindParagraph(page, record.AnchorObjectId);
-			if (current is not null && PlainText(current).Contains(record.Quote))
+			if (page is null || record is null || string.IsNullOrEmpty(record.Quote))
 			{
-				record.Attached = true;
+				if (record is not null) { record.Attached = false; }
 				return false;
 			}
 
-			var candidates = page.Root.Descendants(page.Namespace + "OE")
-				.Where(e => e.Attribute("objectID") is not null)
-				.Select(e => new { Element = e, Text = PlainText(e) })
-				.Where(x => x.Text.Contains(record.Quote))
-				.Select(x => new
+			var current = FindParagraph(page, record.AnchorObjectId);
+			if (current is not null && record.AnchorOffset.HasValue)
+			{
+				var text = PlainText(current);
+				var offset = record.AnchorOffset.Value;
+				if (MatchesAt(text, offset, record.Quote))
 				{
-					x.Element,
-					Score = Score(x.Text, record)
-				})
-				.OrderByDescending(x => x.Score)
-				.ToList();
+					return Bind(record, record.AnchorObjectId, offset);
+				}
+			}
 
+			var candidates = new List<AnchorCandidate>();
+			foreach (var element in page.Root.Descendants(page.Namespace + "OE")
+				.Where(e => e.Attribute("objectID") is not null))
+			{
+				var text = PlainText(element);
+				foreach (var offset in FindOccurrences(text, record.Quote))
+				{
+					candidates.Add(new AnchorCandidate
+					{
+						Element = element,
+						Offset = offset,
+						Score = Score(text, offset, record)
+					});
+				}
+			}
+
+			candidates = candidates.OrderByDescending(c => c.Score).ToList();
 			if (candidates.Count == 0)
 			{
 				record.Attached = false;
@@ -124,44 +179,198 @@ namespace River.OneMoreAddIn.Commands
 			}
 
 			var best = candidates[0];
-			if (candidates.Count > 1 && best.Score == candidates[1].Score && best.Score == 0)
+			if (candidates.Count > 1 && best.Score == candidates[1].Score)
 			{
 				record.Attached = false;
 				return false;
 			}
 
-			var newId = best.Element.Attribute("objectID")?.Value;
-			var changed = newId != record.AnchorObjectId;
-			record.AnchorObjectId = newId;
+			return Bind(record, best.Element.Attribute("objectID")?.Value, best.Offset);
+		}
+
+		public static bool RemoveHighlight(Page page, CommentRecord record)
+		{
+			if (record?.HighlightApplied == false) { return false; }
+			var paragraph = FindParagraph(page, record?.AnchorObjectId);
+			var start = record?.HighlightOffset ?? record?.AnchorOffset;
+			var length = record?.HighlightLength ?? record?.Quote?.Length;
+			if (paragraph is null || !start.HasValue || !length.HasValue || length.Value <= 0)
+			{
+				return false;
+			}
+
+			var targetStart = start.Value;
+			var targetEnd = targetStart + length.Value;
+			var position = 0;
+			var updated = false;
+			foreach (var run in paragraph.Descendants(page.Namespace + "T"))
+			{
+				var cdata = run.GetCData();
+				if (cdata is null) { continue; }
+				var wrapper = cdata.GetWrapper();
+				foreach (var node in wrapper.Nodes().ToList())
+				{
+					var nodeLength = node is XComment ? 0 : node is XText text ? text.Value.Length : ((XElement)node).Value.Length;
+					var nodeStart = position;
+					var nodeEnd = nodeStart + nodeLength;
+					position = nodeEnd;
+
+					if (node is not XElement element || nodeEnd <= targetStart || nodeStart >= targetEnd ||
+						!HasCommentHighlight(element))
+					{
+						continue;
+					}
+
+					var overlapStart = Math.Max(nodeStart, targetStart) - nodeStart;
+					var overlapEnd = Math.Min(nodeEnd, targetEnd) - nodeStart;
+					if (overlapStart == 0 && overlapEnd == nodeLength)
+					{
+						updated |= ClearCommentHighlight(element);
+					}
+					else if (!element.Elements().Any())
+					{
+						var value = element.Value;
+						var pieces = new List<XElement>();
+						if (overlapStart > 0)
+						{
+							pieces.Add(CloneInline(element, value.Substring(0, overlapStart)));
+						}
+						var middle = CloneInline(element, value.Substring(overlapStart, overlapEnd - overlapStart));
+						ClearCommentHighlight(middle);
+						pieces.Add(middle);
+						if (overlapEnd < value.Length)
+						{
+							pieces.Add(CloneInline(element, value.Substring(overlapEnd)));
+						}
+						element.ReplaceWith(pieces);
+						updated = true;
+					}
+				}
+
+				if (updated)
+				{
+					cdata.Value = wrapper.GetInnerXml();
+				}
+			}
+
+			return updated;
+		}
+
+		public static bool HighlightRangesOverlap(CommentRecord left, CommentRecord right)
+		{
+			if (left?.AnchorObjectId != right?.AnchorObjectId)
+			{
+				return false;
+			}
+			var leftStart = left.HighlightOffset ?? left.AnchorOffset;
+			var rightStart = right.HighlightOffset ?? right.AnchorOffset;
+			var leftLength = left.HighlightLength ?? left.Quote?.Length;
+			var rightLength = right.HighlightLength ?? right.Quote?.Length;
+			return leftStart.HasValue && rightStart.HasValue && leftLength > 0 && rightLength > 0 &&
+				Math.Max(leftStart.Value, rightStart.Value) <
+				Math.Min(leftStart.Value + leftLength.Value, rightStart.Value + rightLength.Value);
+		}
+
+		private static bool Bind(CommentRecord record, string objectId, int offset)
+		{
+			var oldAnchor = record.AnchorOffset;
+			var leadingHighlight = oldAnchor.HasValue && record.HighlightOffset.HasValue
+				? oldAnchor.Value - record.HighlightOffset.Value : 0;
+			var highlightOffset = Math.Max(0, offset - leadingHighlight);
+			var changed = record.AnchorObjectId != objectId || record.AnchorOffset != offset ||
+				record.HighlightOffset != highlightOffset || !record.HighlightLength.HasValue ||
+				!record.HighlightApplied.HasValue;
+
+			record.AnchorObjectId = objectId;
+			record.AnchorOffset = offset;
+			record.HighlightOffset = highlightOffset;
+			record.HighlightLength ??= record.Quote.Length;
+			record.HighlightApplied ??= true;
 			record.Attached = true;
 			if (changed)
 			{
 				record.UpdatedUtc = DateTime.UtcNow;
 			}
-
 			return changed;
 		}
 
-		private static int Score(string text, CommentRecord record)
+		private static IEnumerable<int> FindOccurrences(string text, string quote)
+		{
+			for (var offset = 0; offset <= text.Length - quote.Length; offset++)
+			{
+				if (MatchesAt(text, offset, quote))
+				{
+					yield return offset;
+				}
+			}
+		}
+
+		private static bool MatchesAt(string text, int offset, string quote) =>
+			offset >= 0 && offset + quote.Length <= text.Length &&
+			string.Compare(text, offset, quote, 0, quote.Length, StringComparison.Ordinal) == 0;
+
+		private static int Score(string text, int offset, CommentRecord record)
 		{
 			var score = 0;
-			if (!string.IsNullOrEmpty(record.Prefix) && text.Contains(record.Prefix + record.Quote))
+			if (!string.IsNullOrEmpty(record.Prefix))
 			{
-				score += 4;
+				if (offset >= record.Prefix.Length &&
+					string.Compare(text, offset - record.Prefix.Length, record.Prefix, 0,
+						record.Prefix.Length, StringComparison.Ordinal) == 0)
+				{
+					score += 4;
+				}
+				else if (text.Substring(0, offset).Contains(record.Prefix))
+				{
+					score++;
+				}
 			}
-			if (!string.IsNullOrEmpty(record.Suffix) && text.Contains(record.Quote + record.Suffix))
+
+			var after = offset + record.Quote.Length;
+			if (!string.IsNullOrEmpty(record.Suffix))
 			{
-				score += 4;
-			}
-			if (!string.IsNullOrEmpty(record.Prefix) && text.Contains(record.Prefix))
-			{
-				score++;
-			}
-			if (!string.IsNullOrEmpty(record.Suffix) && text.Contains(record.Suffix))
-			{
-				score++;
+				if (after + record.Suffix.Length <= text.Length &&
+					string.Compare(text, after, record.Suffix, 0,
+						record.Suffix.Length, StringComparison.Ordinal) == 0)
+				{
+					score += 4;
+				}
+				else if (text.Substring(after).Contains(record.Suffix))
+				{
+					score++;
+				}
 			}
 			return score;
+		}
+
+		private static bool HasCommentHighlight(XElement element)
+		{
+			var css = element.Attribute("style")?.Value;
+			return !string.IsNullOrEmpty(css) && Regex.IsMatch(css,
+				@"(^|;)\s*background\s*:\s*(#fff2cc|rgb\s*\(\s*255\s*,\s*242\s*,\s*204\s*\))\s*;?",
+				RegexOptions.IgnoreCase);
+		}
+
+		private static bool ClearCommentHighlight(XElement element)
+		{
+			var style = element.Attribute("style");
+			if (style is null || !HasCommentHighlight(element)) { return false; }
+			var css = Regex.Replace(style.Value,
+				@"(^|;)\s*background\s*:\s*(#fff2cc|rgb\s*\(\s*255\s*,\s*242\s*,\s*204\s*\))\s*;?",
+				"$1", RegexOptions.IgnoreCase).Trim().Trim(';');
+			if (string.IsNullOrEmpty(css)) { style.Remove(); }
+			else { style.Value = css; }
+			return true;
+		}
+
+		private static XElement CloneInline(XElement source, string value) =>
+			new XElement(source.Name, source.Attributes(), value);
+
+		private sealed class AnchorCandidate
+		{
+			public XElement Element { get; set; }
+			public int Offset { get; set; }
+			public int Score { get; set; }
 		}
 	}
 
@@ -191,7 +400,8 @@ namespace River.OneMoreAddIn.Commands
 				return;
 			}
 
-			var quote = new PageEditor(page).GetSelectedText()?.Trim();
+			var rawQuote = new PageEditor(page).GetSelectedText();
+			var quote = rawQuote?.Trim();
 			if (string.IsNullOrWhiteSpace(quote))
 			{
 				ShowInfo("选中的内容不是可评论的文字。");
@@ -207,15 +417,24 @@ namespace River.OneMoreAddIn.Commands
 
 			var paragraph = selected[0].Ancestors(page.Namespace + "OE").FirstOrDefault();
 			var paragraphText = CommentStore.PlainText(paragraph);
-			var index = paragraphText.IndexOf(quote, StringComparison.Ordinal);
+			var selectionOffset = CommentStore.GetSelectionOffset(paragraph, selected);
+			var leadingWhitespace = rawQuote.IndexOf(quote, StringComparison.Ordinal);
+			var index = selectionOffset < 0 ? -1 : selectionOffset + Math.Max(0, leadingWhitespace);
+			if (index < 0 || index + quote.Length > paragraphText.Length)
+			{
+				ShowError("无法确定所选文字在段落中的位置。");
+				return;
+			}
 			var prefix = index > 0
 				? paragraphText.Substring(Math.Max(0, index - 40), Math.Min(40, index))
 				: string.Empty;
-			var suffixStart = index < 0 ? -1 : index + quote.Length;
+			var suffixStart = index + quote.Length;
 			var suffix = suffixStart >= 0 && suffixStart < paragraphText.Length
 				? paragraphText.Substring(suffixStart, Math.Min(40, paragraphText.Length - suffixStart))
 				: string.Empty;
 
+			var applyHighlight = !selected.Any(run => Regex.IsMatch(
+				run.GetCData()?.Value ?? string.Empty, @"background\s*:", RegexOptions.IgnoreCase));
 			var comments = CommentStore.Load(page);
 			var now = DateTime.UtcNow;
 			comments.Add(new CommentRecord
@@ -223,6 +442,10 @@ namespace River.OneMoreAddIn.Commands
 				Id = Guid.NewGuid().ToString("N"),
 				PageId = page.PageId,
 				AnchorObjectId = paragraph?.Attribute("objectID")?.Value,
+				AnchorOffset = index,
+				HighlightOffset = selectionOffset,
+				HighlightLength = rawQuote.Length,
+				HighlightApplied = applyHighlight,
 				Quote = quote,
 				Prefix = prefix,
 				Suffix = suffix,
@@ -233,22 +456,22 @@ namespace River.OneMoreAddIn.Commands
 				Attached = true
 			});
 
-			new PageEditor(page).EditSelected(node =>
+			if (applyHighlight)
 			{
-				if (node is XText text)
+				new PageEditor(page).EditSelected(node =>
 				{
-					return new XElement("span",
-						new XAttribute("style", "background:#FFF2CC"), text);
-				}
+					if (node is XText text)
+					{
+						return new XElement("span",
+							new XAttribute("style", "background:#FFF2CC"), text);
+					}
 
-				var span = (XElement)node;
-				span.GetAttributeValue("style", out var style, string.Empty);
-				if (!style.Contains("background:"))
-				{
+					var span = (XElement)node;
+					span.GetAttributeValue("style", out var style, string.Empty);
 					span.SetAttributeValue("style", $"{style};background:#FFF2CC".TrimStart(';'));
-				}
-				return span;
-			});
+					return span;
+				});
+			}
 
 			CommentStore.Save(page, comments);
 			await one.Update(page);
@@ -723,7 +946,17 @@ namespace River.OneMoreAddIn.Commands
 			await using var one = new OneNote();
 			var page = await one.GetPage(pageId, OneNote.PageDetail.All);
 			var comments = CommentStore.Load(page);
-			comments.RemoveAll(c => c.Id == id);
+			foreach (var comment in comments)
+			{
+				CommentStore.Rebind(page, comment);
+			}
+			var record = comments.FirstOrDefault(c => c.Id == id);
+			if (record is null) { return; }
+			comments.Remove(record);
+			if (!comments.Any(c => c.Attached && CommentStore.HighlightRangesOverlap(record, c)))
+			{
+				CommentStore.RemoveHighlight(page, record);
+			}
 			CommentStore.Save(page, comments);
 			await one.Update(page);
 			await RefreshComments();

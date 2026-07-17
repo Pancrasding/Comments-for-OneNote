@@ -1,10 +1,12 @@
 # Comments for OneNote
 
-Add Word-like comments directly inside the Windows desktop version of OneNote.
+Simply add comments in OneNote—just like in Word.
 
-Select text, add a comment in an embedded side pane, and keep the comment attached when the original text moves—much like comments in Microsoft Word.
+Built for 64-bit OneNote on Windows.
 
-Comments for OneNote is a community fork of [Steven M. Cohn's OneMore](https://github.com/stevencohn/OneMore). It keeps the full OneMore feature set while adding this Word-like commenting workflow.
+Select text, add a comment in an embedded side pane, and keep it attached when the original text moves within the page.
+
+Comments for OneNote is a community fork of [Steven M. Cohn's OneMore](https://github.com/stevencohn/OneMore). It keeps the full OneMore feature set while adding a simple, Word-inspired commenting workflow.
 
 > This is an independent community project. It is not an official Microsoft or OneMore release.
 
@@ -15,15 +17,17 @@ Comments for OneNote is a community fork of [Steven M. Cohn's OneMore](https://g
 - Add a comment from the OneMore ribbon or text context menu.
 - View comments in a pane embedded inside the OneNote window.
 - Store comments in hidden page metadata so they travel and sync with the page.
-- Reconnect a comment after its source text moves to another paragraph.
+- Anchor comments to the exact selected occurrence, even when the same text appears more than once.
+- Reconnect a comment after its source text moves to another paragraph on the same page.
 - Jump to, edit, resolve, reopen, and delete comments.
+- Remove the comment highlight when its comment is deleted while preserving other text formatting.
 - Avoid unsafe guesses when identical text occurs in ambiguous locations.
 
 ## Requirements
 
 - Windows desktop OneNote from Microsoft Office.
 - OneMore 7.2.0 installed first.
-- The first community build supports 64-bit OneNote/OneMore.
+- 64-bit OneNote and OneMore. The 32-bit edition is not currently supported.
 
 ## One-click install
 
@@ -59,7 +63,7 @@ Cross-paragraph selections are not yet supported.
 
 ## How anchoring works
 
-Each comment records the quote, its OneNote object ID, and surrounding prefix/suffix context. The pane periodically checks the active page. If the object ID changes after a move, it scores candidate matches using the surrounding context before reconnecting. If matches remain ambiguous, it marks the comment unattached instead of linking to the wrong text.
+Each comment records the exact text offset, quote, OneNote object ID, and surrounding prefix/suffix context. The pane periodically checks the active page. If the object ID changes after a move, it scores candidate matches using the surrounding context before reconnecting. If matches remain ambiguous, it marks the comment unattached instead of linking to the wrong text.
 
 ## Build from source
 
@@ -83,14 +87,16 @@ Contributions and issue reports are welcome.
 
 ## 中文说明
 
-**让 OneNote 像 Word 一样给选中的文字添加批注。**
+**在 OneNote 中轻松添加批注，就像在 Word 中一样。**
+
+适用于 Windows 上的 64 位 OneNote。
 
 > **安装前提：请先安装官方 OneMore 7.2.0 x64，再安装本项目。**
 
-Comments for OneNote 是基于 [OneMore](https://github.com/stevencohn/OneMore) 的社区分支，为 Windows 桌面版 OneNote 增加类似 Microsoft Word 的内嵌批注体验。批注保存在页面隐藏元数据中，原文移动后会根据原文及上下文重新连接。
+Comments for OneNote 是基于 [OneMore](https://github.com/stevencohn/OneMore) 的社区分支，在保留 OneMore 完整功能的基础上，为 OneNote 增加简单、类似 Word 的内嵌批注体验。批注保存在页面隐藏元数据中；即使同一段落存在重复文字，也会记录用户实际选中的位置。原文在同一页面内移动后，批注会根据精确位置和上下文安全地重新连接。
 
 使用方法：在同一段落内选中文字，点击 **OneMore → 添加评论**，或右键选择 **添加评论**。点击 **评论面板** 可显示或隐藏右侧内嵌面板。
 
-安装方法：下载并完整解压 Release 中的 ZIP，关闭 OneNote，然后双击 **`Install.cmd`**。无需手动输入 PowerShell 命令。要卸载并恢复官方 OneMore，双击 **`Uninstall.cmd`**。
+安装方法：下载并完整解压 Release 中的 ZIP，关闭 OneNote，然后双击 **`Install.cmd`**。要卸载并恢复官方 OneMore，双击 **`Uninstall.cmd`**。
 
-当前版本支持 64 位 OneNote。
+当前仅支持 Windows 上的 64 位 OneNote，暂不支持 32 位版本。

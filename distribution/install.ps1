@@ -55,7 +55,7 @@ $addin = 'Registry::HKEY_CURRENT_USER\Software\Microsoft\Office\OneNote\AddIns\R
 New-Item -Path $addin -Force | Out-Null
 Set-ItemProperty -LiteralPath $addin -Name LoadBehavior -Type DWord -Value 3
 Set-ItemProperty -LiteralPath $addin -Name FriendlyName -Value 'Comments for OneNote (OneMore)'
-Set-ItemProperty -LiteralPath $addin -Name Description -Value 'Add Word-like comments directly inside OneNote, powered by OneMore'
+Set-ItemProperty -LiteralPath $addin -Name Description -Value 'Simply add comments in OneNote, just like in Word - powered by OneMore'
 
 Write-Host "Comments for OneNote installed to $target" -ForegroundColor Green
 if (-not $NoLaunch) { Start-Process -FilePath 'onenote.exe' }
